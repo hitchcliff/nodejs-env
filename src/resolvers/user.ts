@@ -53,12 +53,12 @@ export class UserResolver {
       };
     }
 
-    if (options.password.length <= 3) {
+    if (options.password.length <= 2) {
       return {
         errors: [
           {
             field: "password",
-            message: "password must be greater than 3",
+            message: "password must be greater than 2",
           },
         ],
       };
@@ -69,7 +69,21 @@ export class UserResolver {
       username: options.username,
       password: hashedPassword,
     });
-    await em.persistAndFlush(user);
+
+    try {
+      await em.persistAndFlush(user);
+    } catch (error) {
+      if (error.code === "23505") {
+        return {
+          errors: [
+            {
+              field: "username",
+              message: "username already taken",
+            },
+          ],
+        };
+      }
+    }
 
     return { user };
   }
